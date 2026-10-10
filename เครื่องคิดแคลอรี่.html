@@ -1,0 +1,495 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>เครื่องคิดแคลอรี่</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: form column on the left, sticky nutrition-facts label on the right; stacks on phones. */
+:root {
+  --bg: #F3F7F1;
+  --surface: #FFFFFF;
+  --ink: #14291F;
+  --ink-soft: #4C6355;
+  --line: #CBD9CF;
+  --accent: #1F8A4C;
+  --accent-ink: #FFFFFF;
+  --protein: #1F8A4C;
+  --carb: #E8A33D;
+  --fat: #D9694A;
+  --warn-bg: #FFF1D6;
+  --warn-ink: #6B4500;
+  --font-display: "Prompt", "Noto Sans Thai", system-ui, sans-serif;
+  --font-body: "Noto Sans Thai", "Sarabun", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1C15; --surface: #172A20; --ink: #E8F2EA; --ink-soft: #9DB5A4; --line: #2C4435;
+    --accent: #4CC783; --accent-ink: #0B1A11; --protein: #4CC783; --carb: #F0B656; --fat: #EE8465;
+    --warn-bg: #3A2D10; --warn-ink: #F6D58E; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1C15; --surface: #172A20; --ink: #E8F2EA; --ink-soft: #9DB5A4; --line: #2C4435;
+  --accent: #4CC783; --accent-ink: #0B1A11; --protein: #4CC783; --carb: #F0B656; --fat: #EE8465;
+  --warn-bg: #3A2D10; --warn-ink: #F6D58E; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  padding-inline: 16px; padding-block: 28px 48px;
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+
+header h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.9rem, 5vw, 2.8rem); line-height: 1.2; margin: 0 0 8px; text-wrap: balance; letter-spacing: -0.01em; }
+header p { margin: 0; color: var(--ink-soft); max-width: 56ch; }
+.eyebrow { font-family: var(--font-display); font-weight: 500; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 420px); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* Form */
+form { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+legend, .lbl { font-family: var(--font-display); font-weight: 600; font-size: 1rem; padding: 0; margin-bottom: 10px; display: block; }
+
+.seg { display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+.seg input, .opt input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 11px 10px; min-height: 48px; line-height: 1.3;
+  border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface);
+  cursor: pointer; font-weight: 500; transition: border-color .15s, background .15s;
+}
+.seg input:checked + label { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.seg input:focus-visible + label, .opt input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 520px) { .nums { grid-template-columns: minmax(0, 1fr); } }
+.field label { display: block; font-size: .9rem; color: var(--ink-soft); margin-bottom: 4px; }
+.inp { display: flex; align-items: center; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); padding-inline: 14px; }
+.inp:focus-within { border-color: var(--accent); outline: 3px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+.inp input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: 600 1.4rem var(--font-display); padding: 10px 0; width: 100%; outline: none; font-variant-numeric: tabular-nums; }
+.inp span { color: var(--ink-soft); font-size: .9rem; padding-left: 8px; }
+
+.opts { display: flex; flex-direction: column; gap: 6px; }
+.opt label {
+  display: flex; gap: 12px; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
+  padding: 11px 14px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); cursor: pointer;
+}
+.opt label b { font-weight: 600; }
+.opt label small { color: var(--ink-soft); font-size: .85rem; }
+.opt input:checked + label { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); box-shadow: inset 0 0 0 1px var(--accent); }
+
+.hint { font-size: .85rem; color: var(--ink-soft); margin: 8px 0 0; }
+.err { color: var(--fat); font-size: .9rem; min-height: 1.4em; margin: 0; }
+
+/* Nutrition label */
+.label {
+  position: sticky; top: 16px;
+  background: var(--surface); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 4px; padding: 14px 16px 16px;
+  min-width: 0;
+}
+@media (max-width: 860px) { .label { position: static; } }
+.label h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; line-height: 1.25; margin: 0; }
+.label .sub { font-size: .85rem; color: var(--ink-soft); margin: 2px 0 8px; }
+.rule-thick { border: 0; border-top: 8px solid var(--ink); margin: 8px 0; }
+.rule-mid { border: 0; border-top: 4px solid var(--ink); margin: 8px 0; }
+.rule { border: 0; border-top: 1px solid var(--line); margin: 0; }
+.cal-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.cal-row .t { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; }
+.cal-num { font-family: var(--font-display); font-weight: 700; font-size: clamp(3.4rem, 12vw, 4.6rem); line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.cal-num small { font-size: 1.1rem; font-weight: 500; letter-spacing: 0; margin-left: 6px; color: var(--ink-soft); }
+.row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.row:first-of-type { border-top: 0; }
+.row span:first-child { color: var(--ink-soft); }
+.row b { font-weight: 600; text-align: right; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; }
+
+.bar { display: flex; height: 14px; border-radius: 3px; overflow: hidden; background: var(--line); margin: 10px 0 4px; }
+.bar i { display: block; height: 100%; transition: width .35s ease; }
+.warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 6px; padding: 10px 12px; font-size: .9rem; margin: 10px 0 0; }
+.meals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+@media (max-width: 400px) { .meals { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.meal { border: 1px solid var(--line); border-radius: 6px; padding: 8px; text-align: center; }
+.meal small { display: block; color: var(--ink-soft); font-size: .8rem; }
+.meal b { font-family: var(--font-display); font-weight: 600; font-variant-numeric: tabular-nums; }
+.foot { font-size: .8rem; color: var(--ink-soft); margin: 12px 0 0; }
+.sec-title { font-family: var(--font-display); font-weight: 600; font-size: .95rem; margin: 12px 0 0; }
+
+/* Exercise and pre-workout sections */
+.plan-wrap { display: flex; flex-direction: column; gap: 20px; }
+.panel { background: var(--surface); border: 1.5px solid var(--line); border-radius: 12px; padding: 22px 18px; min-width: 0; }
+.panel h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.3rem, 3.5vw, 1.7rem); line-height: 1.3; margin: 0 0 6px; text-wrap: balance; }
+.lead { color: var(--ink-soft); margin: 0 0 16px; max-width: 64ch; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); border-top: 4px solid var(--ink); border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.stats div { padding: 10px 12px 10px 0; display: flex; flex-direction: column; min-width: 0; }
+.stats small { color: var(--ink-soft); font-size: .8rem; }
+.stats b { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.week { list-style: none; margin: 0; padding: 0; }
+.week li { display: grid; grid-template-columns: 104px minmax(0, 1fr) auto; gap: 4px 12px; align-items: baseline; padding: 12px 0; border-top: 1px solid var(--line); }
+.week li:first-child { border-top: 0; }
+.week .d { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); flex: none; }
+.week li.c .dot { background: var(--accent); }
+.week li.s .dot { background: var(--fat); }
+.week .n b { font-weight: 600; }
+.week .n small { display: block; color: var(--ink-soft); font-size: .85rem; line-height: 1.45; }
+.week .m { font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.week li.r .d, .week li.r .n b, .week li.r .m { color: var(--ink-soft); }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: .85rem; color: var(--ink-soft); margin: 12px 0 0; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 480px) {
+  .week li { grid-template-columns: minmax(0, 1fr) auto; }
+  .week .m { grid-column: 2; grid-row: 1; }
+  .week .n { grid-column: 1 / -1; }
+}
+.burn { display: flex; flex-direction: column; gap: 12px; }
+.burn .r { display: grid; grid-template-columns: 140px minmax(0, 1fr) 84px; gap: 4px 12px; align-items: center; }
+.burn .track { height: 14px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.burn .track i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.burn .v { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 480px) {
+  .burn .r { grid-template-columns: minmax(0, 1fr) auto; }
+  .burn .v { grid-column: 2; grid-row: 1; }
+  .burn .track { grid-column: 1 / -1; grid-row: 2; }
+}
+.timeline { list-style: none; margin: 0; padding: 0; }
+.timeline li { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 16px; padding: 16px 0; border-top: 1px solid var(--line); }
+.timeline li:first-child { border-top: 0; }
+.timeline .when { font-family: var(--font-display); font-weight: 600; color: var(--accent); }
+.timeline h3 { margin: 0 0 4px; font-size: 1rem; font-weight: 600; }
+.timeline p { margin: 0 0 4px; }
+.timeline .eg { color: var(--ink-soft); font-size: .9rem; }
+@media (max-width: 560px) { .timeline li { grid-template-columns: minmax(0, 1fr); } }
+.avoid { background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px; padding: 12px 14px; font-size: .92rem; display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.avoid p { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Mifflin-St Jeor · TDEE</div>
+    <h1>เครื่องคิดแคลอรี่ต่อวัน</h1>
+    <p>กรอกเพศ อายุ น้ำหนัก ส่วนสูง และระดับการออกกำลังกาย ระบบจะคำนวณแคลอรี่ที่ควรกินต่อวัน พร้อมสัดส่วนโปรตีน คาร์บ ไขมัน แผนออกกำลังกายรายสัปดาห์ และคำแนะนำเรื่องการกินก่อนและหลังออกกำลังกาย</p>
+  </header>
+
+  <div class="grid">
+    <form id="f" novalidate onsubmit="return false">
+      <fieldset>
+        <legend>เพศ</legend>
+        <div class="seg">
+          <input type="radio" name="sex" id="sexM" value="m" checked><label for="sexM">ชาย</label>
+          <input type="radio" name="sex" id="sexF" value="f"><label for="sexF">หญิง</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>ข้อมูลร่างกาย</legend>
+        <div class="nums">
+          <div class="field"><label for="age">อายุ</label><div class="inp"><input id="age" type="number" inputmode="numeric" min="15" max="90" value="30"><span>ปี</span></div></div>
+          <div class="field"><label for="wt">น้ำหนัก</label><div class="inp"><input id="wt" type="number" inputmode="decimal" min="30" max="250" step="0.1" value="70"><span>กก.</span></div></div>
+          <div class="field"><label for="ht">ส่วนสูง</label><div class="inp"><input id="ht" type="number" inputmode="decimal" min="120" max="230" value="170"><span>ซม.</span></div></div>
+        </div>
+        <p class="err" id="err" role="alert"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>ระดับกิจกรรมในแต่ละสัปดาห์</legend>
+        <div class="opts">
+          <div class="opt"><input type="radio" name="act" id="a1" value="1.2"><label for="a1"><b>แทบไม่ขยับ</b><small>นั่งทำงาน ไม่ออกกำลังกาย</small></label></div>
+          <div class="opt"><input type="radio" name="act" id="a2" value="1.375" checked><label for="a2"><b>เบา</b><small>ออกกำลังกาย 1–3 วัน</small></label></div>
+          <div class="opt"><input type="radio" name="act" id="a3" value="1.55"><label for="a3"><b>ปานกลาง</b><small>ออกกำลังกาย 3–5 วัน</small></label></div>
+          <div class="opt"><input type="radio" name="act" id="a4" value="1.725"><label for="a4"><b>หนัก</b><small>ออกกำลังกาย 6–7 วัน</small></label></div>
+          <div class="opt"><input type="radio" name="act" id="a5" value="1.9"><label for="a5"><b>หนักมาก</b><small>นักกีฬา หรืองานใช้แรงทั้งวัน</small></label></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>เป้าหมาย</legend>
+        <div class="seg">
+          <input type="radio" name="goal" id="g1" value="-500"><label for="g1">ลดน้ำหนัก<br>~0.5 กก./สัปดาห์</label>
+          <input type="radio" name="goal" id="g2" value="-250"><label for="g2">ลดเบาๆ<br>~0.25 กก./สัปดาห์</label>
+          <input type="radio" name="goal" id="g3" value="0" checked><label for="g3">รักษาน้ำหนัก</label>
+          <input type="radio" name="goal" id="g4" value="300"><label for="g4">เพิ่มกล้ามเนื้อ<br>+300 kcal</label>
+        </div>
+        <p class="hint">ค่าที่ใส่ไว้เป็นตัวอย่าง แก้ไขเป็นข้อมูลของคุณได้เลย ผลลัพธ์จะเปลี่ยนทันที</p>
+      </fieldset>
+    </form>
+
+    <aside class="label" aria-live="polite">
+      <h2>พลังงานที่ควรได้รับ</h2>
+      <div class="sub">ต่อวัน · คำนวณจากข้อมูลของคุณ</div>
+      <hr class="rule-thick">
+      <div class="cal-row"><span class="t">เป้าหมายแคลอรี่</span></div>
+      <div class="cal-num"><span id="target">—</span><small>kcal</small></div>
+      <div id="warn" class="warn" hidden></div>
+      <hr class="rule-mid">
+
+      <div class="row"><span>BMR (พลังงานขณะพัก)</span><b id="bmr">—</b></div>
+      <div class="row"><span>TDEE (พลังงานที่ใช้จริงต่อวัน)</span><b id="tdee">—</b></div>
+      <div class="row"><span>ปรับตามเป้าหมาย</span><b id="adj">—</b></div>
+
+      <hr class="rule-mid">
+      <div class="sec-title" style="margin-top:0">สัดส่วนสารอาหาร</div>
+      <div class="bar" aria-hidden="true"><i id="bP" style="background:var(--protein)"></i><i id="bC" style="background:var(--carb)"></i><i id="bF" style="background:var(--fat)"></i></div>
+      <div class="row"><span><span class="sw" style="background:var(--protein)"></span>โปรตีน</span><b id="mP">—</b></div>
+      <div class="row"><span><span class="sw" style="background:var(--carb)"></span>คาร์โบไฮเดรต</span><b id="mC">—</b></div>
+      <div class="row"><span><span class="sw" style="background:var(--fat)"></span>ไขมัน</span><b id="mF">—</b></div>
+
+      <div class="sec-title">แบ่งมื้ออาหาร</div>
+      <div class="meals">
+        <div class="meal"><small>เช้า</small><b id="m1">—</b></div>
+        <div class="meal"><small>กลางวัน</small><b id="m2">—</b></div>
+        <div class="meal"><small>เย็น</small><b id="m3">—</b></div>
+        <div class="meal"><small>ของว่าง</small><b id="m4">—</b></div>
+      </div>
+
+      <hr class="rule-mid">
+      <div class="row"><span>BMI (เกณฑ์เอเชีย)</span><b id="bmi">—</b></div>
+      <div class="row"><span>น้ำดื่มต่อวัน</span><b id="water">—</b></div>
+      <p class="foot">เป็นค่าประมาณเพื่อใช้วางแผนเท่านั้น ไม่ใช่คำแนะนำทางการแพทย์ หากมีโรคประจำตัว ตั้งครรภ์ หรือให้นมบุตร ควรปรึกษาแพทย์หรือนักกำหนดอาหาร</p>
+    </aside>
+  </div>
+
+  <div id="plan" class="plan-wrap">
+    <section class="panel">
+      <div class="eyebrow">แผนออกกำลังกาย</div>
+      <h2 id="planTitle">—</h2>
+      <p class="lead" id="planLead"></p>
+      <div class="stats">
+        <div><small>เฉลี่ยต่อวัน</small><b id="sAvg">—</b></div>
+        <div><small>รวมต่อสัปดาห์</small><b id="sWeek">—</b></div>
+        <div><small>ก้าวเดินต่อวัน</small><b id="sSteps">—</b></div>
+        <div><small>ชีพจรเป้าหมาย</small><b id="sHr">—</b></div>
+      </div>
+      <ul class="week" id="week"></ul>
+      <div class="legend"><span><i class="dot" style="background:var(--accent)"></i>คาร์ดิโอ</span><span><i class="dot" style="background:var(--fat)"></i>เวทเทรนนิ่ง</span><span><i class="dot"></i>พัก</span></div>
+      <p class="hint" id="planHint"></p>
+    </section>
+
+    <section class="panel">
+      <div class="eyebrow">เลือกกิจกรรม</div>
+      <h2>เผาผลาญได้เท่าไหร่ใน 30 นาที</h2>
+      <p class="lead" id="burnLead"></p>
+      <div class="burn" id="burn"></div>
+    </section>
+
+    <section class="panel">
+      <div class="eyebrow">โภชนาการรอบการออกกำลังกาย</div>
+      <h2>กินอย่างไรก่อนและหลังออกกำลังกาย</h2>
+      <p class="lead" id="eatLead"></p>
+      <ol class="timeline" id="eat"></ol>
+      <div class="avoid" id="avoid"></div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <div class="eyebrow">ที่มาของสูตร</div>
+    <h2>วิธีคำนวณและแหล่งอ้างอิง</h2>
+    <ul class="week refs">
+      <li><span class="d">BMR</span><span class="n"><b>สูตร Mifflin-St Jeor</b><small>ชาย = 10 × น้ำหนัก (กก.) + 6.25 × ส่วนสูง (ซม.) − 5 × อายุ + 5<br>หญิง = 10 × น้ำหนัก (กก.) + 6.25 × ส่วนสูง (ซม.) − 5 × อายุ − 161<br>Mifflin MD, et al. Am J Clin Nutr. 1990;51(2):241–247</small></span></li>
+      <li><span class="d">TDEE</span><span class="n"><b>BMR × ตัวคูณกิจกรรม</b><small>1.2 · 1.375 · 1.55 · 1.725 · 1.9 ตามระดับกิจกรรมที่เลือก แล้วบวกหรือลบตามเป้าหมาย (ไขมัน 1 กก. ให้พลังงานราว 7,700 kcal)</small></span></li>
+      <li><span class="d">สารอาหาร</span><span class="n"><b>โปรตีน 1.4–1.8 ก./กก. ไขมัน 25% ของพลังงาน</b><small>คาร์โบไฮเดรตคือพลังงานที่เหลือ · Jäger R, et al. J Int Soc Sports Nutr. 2017;14:20</small></span></li>
+      <li><span class="d">ออกกำลังกาย</span><span class="n"><b>150–300 นาทีต่อสัปดาห์ และเวทอย่างน้อย 2 วัน</b><small>WHO Guidelines on Physical Activity and Sedentary Behaviour, 2020 · ค่า MET จาก Ainsworth BE, et al. Med Sci Sports Exerc. 2011;43(8):1575–1581</small></span></li>
+      <li><span class="d">การกิน</span><span class="n"><b>ก่อนและหลังออกกำลังกาย</b><small>Thomas DT, et al. Nutrition and Athletic Performance (ACSM, AND, DC Joint Position Statement). Med Sci Sports Exerc. 2016;48(3):543–568</small></span></li>
+      <li><span class="d">BMI</span><span class="n"><b>เกณฑ์เอเชียแปซิฟิก</b><small>น้อยกว่า 18.5 น้ำหนักน้อย · 18.5–22.9 สมส่วน · 23–24.9 น้ำหนักเกิน · 25–29.9 อ้วนระดับ 1 · 30 ขึ้นไป อ้วนระดับ 2 · WHO/IASO/IOTF, The Asia-Pacific Perspective, 2000</small></span></li>
+    </ul>
+    <p class="hint">ชีพจรเป้าหมายใช้สูตร 220 − อายุ และน้ำดื่ม 35 มล. ต่อน้ำหนัก 1 กก. เป็นแนวทางทั่วไป เว็บนี้ทำเพื่อการเรียนรู้ ไม่ใช่การวินิจฉัยหรือคำแนะนำทางการแพทย์</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (n) { return Math.round(n).toLocaleString('en-US'); };
+  var checked = function (name) { return document.querySelector('input[name="' + name + '"]:checked').value; };
+  var dash = '—';
+
+  function clearOut() {
+    $('plan').hidden = true;
+    ['target','bmr','tdee','adj','mP','mC','mF','m1','m2','m3','m4','bmi','water'].forEach(function (id) { $(id).textContent = dash; });
+    ['bP','bC','bF'].forEach(function (id) { $(id).style.width = '0%'; });
+    $('warn').hidden = true;
+  }
+
+  // day: [name, kind (c cardio, s strength, r rest), activity, [beginner, regular, advanced minutes], detail]
+  var PLANS = {
+    lose: {
+      title: 'ลดน้ำหนัก', steps: '8,000–10,000',
+      lead: 'เน้นคาร์ดิโอความหนักปานกลางควบคู่กับเวทเทรนนิ่ง เพื่อเผาผลาญพลังงานและรักษากล้ามเนื้อไว้ระหว่างลดน้ำหนัก',
+      days: [
+        ['จันทร์', 'c', 'คาร์ดิโอปานกลาง', [30, 40, 50], 'เดินเร็ว วิ่งเหยาะ หรือปั่นจักรยาน'],
+        ['อังคาร', 's', 'เวทเทรนนิ่งทั้งตัว', [35, 45, 55], 'สควอต ดันพื้น พายยางยืด แพลงก์ อย่างละ 3 เซต'],
+        ['พุธ', 'c', 'คาร์ดิโอปานกลาง', [30, 40, 50], 'เลือกกิจกรรมที่ไม่ซ้ำกับวันจันทร์'],
+        ['พฤหัสบดี', 's', 'เวทเทรนนิ่งทั้งตัว', [35, 45, 55], 'เพิ่มน้ำหนักหรือจำนวนครั้งเล็กน้อยจากสัปดาห์ก่อน'],
+        ['ศุกร์', 'c', 'คาร์ดิโอสลับหนักเบา', [25, 30, 35], 'วิ่งเร็วหรือเดินชัน 1 นาที สลับเดินช้า 2 นาที'],
+        ['เสาร์', 'c', 'เดินหรือปั่นระยะยาว', [45, 60, 75], 'ความหนักเบา คุยกับเพื่อนได้สบาย'],
+        ['อาทิตย์', 'r', 'พักฟื้น', [0, 0, 0], 'เดินเล่น ยืดเหยียด นอนให้พอ']
+      ]
+    },
+    keep: {
+      title: 'รักษาน้ำหนัก', steps: '7,000–8,000',
+      lead: 'ผสมคาร์ดิโอกับเวทเทรนนิ่งให้ได้ตามเกณฑ์ขององค์การอนามัยโลก คือ 150–300 นาทีต่อสัปดาห์ และเวทอย่างน้อย 2 วัน',
+      days: [
+        ['จันทร์', 'c', 'คาร์ดิโอปานกลาง', [30, 35, 45], 'เดินเร็ว วิ่งเหยาะ หรือเต้นแอโรบิก'],
+        ['อังคาร', 's', 'เวทเทรนนิ่งทั้งตัว', [30, 40, 45], 'ท่าหลักๆ เช่น สควอต ดันพื้น พายยางยืด'],
+        ['พุธ', 'r', 'เดินเบาและยืดเหยียด', [20, 20, 20], 'ใช้เป็นวันฟื้นตัว ไม่ต้องหนัก'],
+        ['พฤหัสบดี', 'c', 'คาร์ดิโอปานกลาง', [30, 35, 45], 'ปั่นจักรยานหรือว่ายน้ำ'],
+        ['ศุกร์', 's', 'เวทเทรนนิ่งทั้งตัว', [30, 40, 45], 'เพิ่มน้ำหนักทีละน้อยเมื่อทำได้สบาย'],
+        ['เสาร์', 'c', 'กิจกรรมที่ชอบ', [40, 60, 60], 'เล่นกีฬา เดินเขา หรือว่ายน้ำ'],
+        ['อาทิตย์', 'r', 'พักเต็มวัน', [0, 0, 0], 'นอนให้พอและกินให้ครบ']
+      ]
+    },
+    gain: {
+      title: 'เพิ่มกล้ามเนื้อ', steps: '6,000–8,000',
+      lead: 'เน้นเวทเทรนนิ่ง 4 วัน แบ่งส่วนบน ส่วนล่าง และทั้งตัว เพิ่มน้ำหนักทีละน้อย ทำคาร์ดิโอเบาๆ เพื่อสุขภาพหัวใจ และพักให้พอเพื่อให้กล้ามเนื้อโต',
+      days: [
+        ['จันทร์', 's', 'เวทส่วนบน', [40, 50, 60], 'ดันอก ดึงหลัง ไหล่ แขน อย่างละ 3–4 เซต 8–12 ครั้ง'],
+        ['อังคาร', 'c', 'คาร์ดิโอเบา', [20, 20, 25], 'เดินเร็วหรือปั่นจักรยานเบาๆ'],
+        ['พุธ', 's', 'เวทส่วนล่าง', [40, 50, 60], 'สควอต ลันจ์ ยกสะโพก ยกน่อง'],
+        ['พฤหัสบดี', 'r', 'พักฟื้น', [0, 0, 0], 'ยืดเหยียด เดินเล่น'],
+        ['ศุกร์', 's', 'เวททั้งตัว', [40, 50, 60], 'เน้นท่าหลายข้อต่อ เช่น เดดลิฟต์ ดันไหล่ พายตัว'],
+        ['เสาร์', 's', 'เสริมกล้ามเนื้อส่วนที่ยังอ่อน', [30, 40, 45], 'แขน ไหล่ หน้าท้อง และหลังส่วนล่าง'],
+        ['อาทิตย์', 'r', 'พักเต็มวัน', [0, 0, 0], 'นอน 7–9 ชั่วโมง กินโปรตีนให้ครบ']
+      ]
+    }
+  };
+  var LEVELS = ['เริ่มต้น', 'ปานกลาง', 'ต่อเนื่อง'];
+  var ACTS = [['เดินเร็ว', 4.3], ['เวทเทรนนิ่ง', 5.0], ['ว่ายน้ำ', 6.0], ['ปั่นจักรยาน', 7.0], ['วิ่งเหยาะ', 8.3], ['HIIT / คาร์ดิโอหนัก', 9.0]];
+  var r5 = function (n) { return Math.round(n / 5) * 5; };
+
+  function renderPlan(age, wt, act, goal) {
+    var P = PLANS[goal < 0 ? 'lose' : goal > 0 ? 'gain' : 'keep'];
+    var lv = act <= 1.375 ? 0 : act <= 1.55 ? 1 : 2;
+    var total = 0, html = '';
+    P.days.forEach(function (d) {
+      var m = d[3][lv];
+      total += m;
+      html += '<li class="' + d[1] + '"><span class="d"><i class="dot"></i>' + d[0] + '</span>' +
+        '<span class="n"><b>' + d[2] + '</b><small>' + d[4] + '</small></span>' +
+        '<span class="m">' + (m ? m + ' นาที' : 'พัก') + '</span></li>';
+    });
+    $('week').innerHTML = html;
+    $('planTitle').textContent = 'แผนออกกำลังกายเพื่อ' + P.title + ' · ระดับ' + LEVELS[lv];
+    $('planLead').textContent = P.lead + ' เวลาในแผนปรับตามระดับกิจกรรมที่คุณเลือก';
+    $('sAvg').textContent = Math.round(total / 7) + ' นาที';
+    $('sWeek').textContent = total + ' นาที';
+    $('sSteps').textContent = P.steps;
+    var hrmax = 220 - age;
+    $('sHr').textContent = Math.round(hrmax * 0.64) + '–' + Math.round(hrmax * 0.76) + ' bpm';
+    $('planHint').textContent = 'ความหนักปานกลางคือพูดเป็นประโยคได้แต่ร้องเพลงไม่ได้ ชีพจรเป้าหมายคำนวณจาก 220 − อายุ ใช้เป็นแนวทางคร่าวๆ เริ่มจากน้อยแล้วเพิ่มเวลาทีละ 10% ต่อสัปดาห์ และพักอย่างน้อย 1–2 วัน';
+
+    var maxK = ACTS[ACTS.length - 1][1] * wt * 0.5;
+    $('burnLead').textContent = 'ประมาณการสำหรับน้ำหนัก ' + fmt(wt) + ' กก. คำนวณจากค่า MET × น้ำหนัก × เวลา ตัวเลขจริงขึ้นกับความหนักและความฟิตของแต่ละคน';
+    $('burn').innerHTML = ACTS.map(function (a) {
+      var k = a[1] * wt * 0.5;
+      return '<div class="r"><span>' + a[0] + '</span><div class="track"><i style="width:' + (k / maxK * 100) + '%"></i></div><span class="v">' + r5(k) + ' kcal</span></div>';
+    }).join('');
+
+    var snackNote = goal < 0 ? ' ของว่างนี้นับรวมในแคลอรี่ของวัน ประมาณ 100–150 kcal ไม่ต้องกินเพิ่มจนเกินเป้าหมาย' : '';
+    $('eatLead').textContent = 'ตัวเลขด้านล่างคำนวณจากน้ำหนัก ' + fmt(wt) + ' กก. ของคุณ';
+    var items = [
+      ['2–3 ชม. ก่อน', 'มื้อหลักที่ย่อยง่าย',
+        'คาร์โบไฮเดรต ' + r5(wt * 1) + '–' + r5(wt * 2) + ' ก. โปรตีน 20–30 ก. ไขมันและกากใยไม่มาก ดื่มน้ำ ' + r5(wt * 5) + '–' + r5(wt * 7) + ' มล. ตามไปด้วย',
+        'ข้าวสวยกับอกไก่ต้มและผักลวก · ข้าวต้มปลา · ขนมปังโฮลวีทกับไข่ต้ม'],
+      ['30–60 นาทีก่อน', 'ของว่างเบาๆ',
+        'คาร์โบไฮเดรต 20–30 ก. ที่ย่อยเร็ว เพื่อให้มีพลังงานพร้อมใช้ตอนเริ่ม.' + snackNote,
+        'กล้วยหอม 1 ผล · ขนมปัง 1–2 แผ่นทาแยมบางๆ · ข้าวต้มปริมาณน้อย'],
+      ['ระหว่างออกกำลังกาย', 'จิบน้ำสม่ำเสมอ',
+        'ดื่มน้ำเปล่า 150–250 มล. ทุก 15–20 นาที ถ้าออกกำลังกายเกิน 60 นาทีหรือเหงื่อออกมาก ให้เสริมเกลือแร่',
+        ''],
+      ['ภายใน 2 ชม. หลัง', 'มื้อฟื้นตัว',
+        'โปรตีน ' + r5(wt * 0.25) + '–' + r5(wt * 0.4) + ' ก. พร้อมคาร์โบไฮเดรต เพื่อซ่อมแซมกล้ามเนื้อและเติมพลังงานที่ใช้ไป',
+        'ไข่ต้ม 2–3 ฟองกับข้าวสวย · ปลานึ่งกับข้าวสวย · นมจืด 1 แก้วกับกล้วย']
+    ];
+    $('eat').innerHTML = items.map(function (it) {
+      return '<li><div class="when">' + it[0] + '</div><div><h3>' + it[1] + '</h3><p>' + it[2] + '</p>' + (it[3] ? '<p class="eg">ตัวอย่าง: ' + it[3] + '</p>' : '') + '</div></li>';
+    }).join('');
+    $('avoid').innerHTML =
+      '<p><b>ควรเลี่ยงก่อนออกกำลังกาย 1–2 ชม.</b> ของทอดและอาหารไขมันสูง ถั่วหรือผักกากใยสูงปริมาณมาก น้ำอัดลม และอาหารรสจัด หากเคยจุกหรือคลื่นไส้ ให้เว้นระยะจากมื้ออาหารเป็น 3 ชม.</p>' +
+      '<p><b>ออกกำลังกายตอนเช้าก่อนกินอะไร</b> ทำได้ถ้าเบาและไม่เกิน 45 นาที แต่ถ้าจะยกเวทหรือวิ่งเร็ว ควรกินกล้วยหรือขนมปังชิ้นเล็กก่อน</p>' +
+      '<p><b>หยุดและปรึกษาแพทย์</b> หากเจ็บหน้าอก เวียนหัว หรือหายใจไม่ทัน โดยเฉพาะผู้ที่มีโรคหัวใจ เบาหวาน หรือความดันโลหิตสูง ควรปรึกษาแพทย์ก่อนเริ่มโปรแกรม</p>';
+    $('plan').hidden = false;
+  }
+
+  function bmiLabel(b) {
+    if (b < 18.5) return 'น้ำหนักน้อย';
+    if (b < 23) return 'สมส่วน';
+    if (b < 25) return 'น้ำหนักเกิน';
+    if (b < 30) return 'อ้วนระดับ 1';
+    return 'อ้วนระดับ 2';
+  }
+
+  function calc() {
+    var sex = checked('sex');
+    var age = parseFloat($('age').value);
+    var wt = parseFloat($('wt').value);
+    var ht = parseFloat($('ht').value);
+    var act = parseFloat(checked('act'));
+    var goal = parseFloat(checked('goal'));
+
+    var msg = '';
+    if (!(age >= 15 && age <= 90)) msg = 'อายุควรอยู่ระหว่าง 15–90 ปี';
+    else if (!(wt >= 30 && wt <= 250)) msg = 'น้ำหนักควรอยู่ระหว่าง 30–250 กก.';
+    else if (!(ht >= 120 && ht <= 230)) msg = 'ส่วนสูงควรอยู่ระหว่าง 120–230 ซม.';
+    $('err').textContent = msg;
+    if (msg) { clearOut(); return; }
+
+    var bmr = 10 * wt + 6.25 * ht - 5 * age + (sex === 'm' ? 5 : -161);
+    var tdee = bmr * act;
+    var target = tdee + goal;
+    var floor = sex === 'm' ? 1500 : 1200;
+    var floored = false;
+    if (target < floor) { target = floor; floored = true; }
+    var adj = target - tdee;
+
+    // Macros: protein by body weight, fat 25% of calories, carbs fill the rest.
+    var pPerKg = goal < 0 ? 1.8 : (goal > 0 ? 1.6 : 1.4);
+    var pG = pPerKg * wt;
+    var pK = pG * 4;
+    var fK = target * 0.25;
+    var fG = fK / 9;
+    var cK = Math.max(target - pK - fK, 0);
+    var cG = cK / 4;
+    var tot = pK + cK + fK;
+
+    $('target').textContent = fmt(target);
+    $('bmr').textContent = fmt(bmr) + ' kcal';
+    $('tdee').textContent = fmt(tdee) + ' kcal';
+    $('adj').textContent = (adj > 0 ? '+' : adj < 0 ? '−' : '') + fmt(Math.abs(adj)) + ' kcal';
+
+    $('mP').textContent = fmt(pG) + ' ก. · ' + fmt(pK / tot * 100) + '%';
+    $('mC').textContent = fmt(cG) + ' ก. · ' + fmt(cK / tot * 100) + '%';
+    $('mF').textContent = fmt(fG) + ' ก. · ' + fmt(fK / tot * 100) + '%';
+    $('bP').style.width = (pK / tot * 100) + '%';
+    $('bC').style.width = (cK / tot * 100) + '%';
+    $('bF').style.width = (fK / tot * 100) + '%';
+
+    $('m1').textContent = fmt(target * 0.25);
+    $('m2').textContent = fmt(target * 0.35);
+    $('m3').textContent = fmt(target * 0.30);
+    $('m4').textContent = fmt(target * 0.10);
+
+    var bmi = wt / Math.pow(ht / 100, 2);
+    $('bmi').textContent = bmi.toFixed(1) + ' · ' + bmiLabel(bmi);
+    $('water').textContent = (wt * 0.035).toFixed(1) + ' ลิตร';
+    renderPlan(age, wt, act, goal);
+
+    var w = $('warn');
+    if (floored) {
+      w.hidden = false;
+      w.textContent = 'ค่านี้ถูกปรับขึ้นเป็นขั้นต่ำที่ปลอดภัย (' + fmt(floor) + ' kcal) เพราะการกินต่ำกว่านี้อาจขาดสารอาหาร ลองเลือกเป้าหมายลดน้ำหนักแบบเบาลง';
+    } else { w.hidden = true; }
+  }
+
+  document.getElementById('f').addEventListener('input', calc);
+  document.getElementById('f').addEventListener('change', calc);
+  calc();
+})();
+</script>
+
+</body></html>
